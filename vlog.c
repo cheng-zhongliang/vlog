@@ -1,6 +1,8 @@
 #include "vlog.h"
+#include <sys/time.h>
 
 #define MAX_CALLBACKS 32
+#define MAX_RATE_ENTRIES 256
 
 typedef struct {
     vlog_LogFn fn;
@@ -8,12 +10,19 @@ typedef struct {
     int level;
 } Callback;
 
+typedef struct {
+    unsigned long hash;
+    struct timeval last_log_time;
+} RateEntry;
+
 static struct {
     void* udata;
     vlog_LockFn lock;
     int level;
     bool quiet;
     Callback callbacks[MAX_CALLBACKS];
+    double rate_limit_interval;
+    RateEntry rate_entries[MAX_RATE_ENTRIES];
 } L;
 
 static const char* level_strings[] = { "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL" };
@@ -77,6 +86,51 @@ void vlog_set_quiet(bool enable) {
     L.quiet = enable;
 }
 
+void vlog_set_rate_limit(double interval_seconds) {
+    L.rate_limit_interval = interval_seconds;
+}
+
+static unsigned long hash_location(const char* file, int line) {
+    unsigned long hash = 5381;
+    
+    // Hash the filename
+    while (*file) {
+        hash = ((hash << 5) + hash) + (unsigned char)*file++;
+    }
+    
+    // Include line number in hash
+    hash = ((hash << 5) + hash) + line;
+    
+    return hash;
+}
+
+static bool should_rate_limit(const char* file, int line) {
+    if (L.rate_limit_interval <= 0.0) {
+        return false; // Rate limiting disabled
+    }
+    
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+    
+    unsigned long hash = hash_location(file, line);
+    int index = hash % MAX_RATE_ENTRIES;
+    
+    RateEntry* entry = &L.rate_entries[index];
+    
+    // Calculate time difference in seconds
+    double time_diff = (current_time.tv_sec - entry->last_log_time.tv_sec) +
+                      (current_time.tv_usec - entry->last_log_time.tv_usec) / 1000000.0;
+    
+    // Check if this is a new entry or enough time has passed
+    if (entry->hash != hash || time_diff >= L.rate_limit_interval) {
+        entry->hash = hash;
+        entry->last_log_time = current_time;
+        return false; // Don't rate limit
+    }
+    
+    return true; // Rate limit this log
+}
+
 int vlog_add_callback(vlog_LogFn fn, void* udata, int level) {
     for(int i = 0; i < MAX_CALLBACKS; i++) {
         if(!L.callbacks[i].fn) {
@@ -108,6 +162,12 @@ void vlog_log(int level, const char* file, int line, const char* fmt, ...) {
     };
 
     lock();
+
+    // Check rate limiting
+    if (should_rate_limit(file, line)) {
+        unlock();
+        return;
+    }
 
     if(!L.quiet && level >= L.level) {
         init_event(&ev, stderr);

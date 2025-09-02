@@ -36,6 +36,7 @@ void vlog_set_level(int level);
 void vlog_set_quiet(bool enable);
 int vlog_add_callback(vlog_LogFn fn, void* udata, int level);
 int vlog_add_fp(FILE* fp, int level);
+void vlog_set_rate_limit(double interval_seconds);
 
 void vlog_log(int level, const char* file, int line, const char* fmt, ...);
 
