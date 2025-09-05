@@ -192,10 +192,48 @@ static void test_vlog_set_level(void** state) {
     assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
 }
 
+static void test_vlog_set_quiet(void** state) {
+    will_return_maybe(__wrap_ftell, 100);
+
+    vlog_set_quiet(true);
+
+    test_vlog_log(VLOG_ERROR, "main", "test.c", 10, "An error message");
+    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
+    assert_string_equal(stderr_stash_buffer, "");
+
+    vlog_set_quiet(false);
+
+    test_vlog_log(VLOG_ERROR, "main", "test.c", 20, "Another error message");
+    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
+    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
+}
+
+static void test_vlog_set_module(void** state) {
+    will_return_maybe(__wrap_ftell, 100);
+
+    vlog_set_module("network");
+
+    test_vlog_log(VLOG_ERROR, "main", "test.c", 10, "An error message");
+    assert_string_equal(file_log_buffer, "");
+    assert_string_equal(stderr_log_buffer, "");
+
+    test_vlog_log(VLOG_ERROR, "network", "net.c", 20, "A network error");
+    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
+    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
+
+    vlog_set_module("");
+
+    test_vlog_log(VLOG_ERROR, "main", "test.c", 30, "Another error message");
+    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
+    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_vlog_init),
         cmocka_unit_test_setup_teardown(test_vlog_set_level, setup, teardown),
+        cmocka_unit_test_setup_teardown(test_vlog_set_quiet, setup, teardown),
+        cmocka_unit_test_setup_teardown(test_vlog_set_module, setup, teardown),
     };
 
     cmocka_set_message_output(CM_OUTPUT_XML);
