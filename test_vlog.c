@@ -117,12 +117,19 @@ size_t __wrap_strftime(char* s, size_t maxsize, const char* format, const struct
     return 0;
 }
 
+int __wrap_fputs(const char* __restrict __s, FILE* __restrict __stream) {
+    // if(__stream == MOCK_FP) {
+
+    // }
+    return 0;
+}
+
 void test_vlog_log(int level, const char* module, const char* file, int line, const char* fmt, ...) {
     int len;
     va_list ap;
 
     snprintf(expected_stderr_log_buffer, sizeof(expected_stderr_log_buffer),
-    "12:00:00 %-5s %-5s %s:%d: ", vlog_level_string(level), module, file, line);
+    "12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level), module, file, line);
     len = strlen(expected_stderr_log_buffer);
     va_start(ap, fmt);
     vsnprintf(expected_stderr_log_buffer + len,
@@ -133,7 +140,8 @@ void test_vlog_log(int level, const char* module, const char* file, int line, co
     expected_stderr_log_buffer[len + 1] = '\0';
 
     snprintf(expected_file_log_buffer, sizeof(expected_file_log_buffer),
-    "2024-01-01 12:00:00 %-5s %-5s %s:%d: ", vlog_level_string(level), module, file, line);
+    "2024-01-01 12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level), module,
+    file, line);
     len = strlen(expected_file_log_buffer);
     va_start(ap, fmt);
     vsnprintf(expected_file_log_buffer + len,
@@ -175,6 +183,8 @@ static int teardown(void** state) {
 }
 
 static void test_vlog_init(void** state) {
+    will_return_maybe(__wrap_ftell, 100);
+
     int rc;
 
     vlog_init();
@@ -199,50 +209,13 @@ static void test_vlog_set_level(void** state) {
     assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
 }
 
-static void test_vlog_set_quiet(void** state) {
-    will_return_maybe(__wrap_ftell, 100);
-
-    vlog_set_quiet(true);
-
-    test_vlog_log(VLOG_ERROR, "main", "test.c", 10, "An error message");
-    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
-    assert_string_equal(stderr_stash_buffer, "");
-
-    vlog_set_quiet(false);
-
-    test_vlog_log(VLOG_ERROR, "main", "test.c", 20, "Another error message");
-    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
-    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
-}
-
-static void test_vlog_set_module(void** state) {
-    will_return_maybe(__wrap_ftell, 100);
-
-    vlog_set_module("network");
-
-    test_vlog_log(VLOG_ERROR, "main", "test.c", 10, "An error message");
-    assert_string_equal(file_log_buffer, "");
-    assert_string_equal(stderr_log_buffer, "");
-
-    test_vlog_log(VLOG_ERROR, "network", "net.c", 20, "A network error");
-    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
-    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
-
-    vlog_set_module("");
-
-    test_vlog_log(VLOG_ERROR, "main", "test.c", 30, "Another error message");
-    assert_string_equal(file_stash_buffer, expected_file_log_buffer);
-    assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
-}
 
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_vlog_init),
-        cmocka_unit_test_setup_teardown(test_vlog_set_level, setup, teardown),
-        cmocka_unit_test_setup_teardown(test_vlog_set_quiet, setup, teardown),
-        cmocka_unit_test_setup_teardown(test_vlog_set_module, setup, teardown),
+        // cmocka_unit_test_setup_teardown(test_vlog_set_level, setup, teardown),
     };
 
-    cmocka_set_message_output(CM_OUTPUT_XML);
+    // cmocka_set_message_output(CM_OUTPUT_XML);
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

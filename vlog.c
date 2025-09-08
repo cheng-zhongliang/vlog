@@ -8,7 +8,7 @@
 
 #include "vlog.h"
 
-#define LOG_MODULE VLM_vlog
+#define MODULE VLM_vlog
 
 /* Name for each logging level. */
 static const char* level_names[VLL_N_LEVELS] = {
@@ -18,11 +18,11 @@ static const char* level_names[VLL_N_LEVELS] = {
 };
 
 /* Syslog value for each logging level. */
-static int syslog_levels[VLL_N_LEVELS] = {
-#define VLOG_LEVEL(NAME, SYSLOG_LEVEL) SYSLOG_LEVEL,
-    VLOG_LEVELS
-#undef VLOG_LEVEL
-};
+// static int syslog_levels[VLL_N_LEVELS] = {
+// #define VLOG_LEVEL(NAME, SYSLOG_LEVEL) SYSLOG_LEVEL,
+//     VLOG_LEVELS
+// #undef VLOG_LEVEL
+// };
 
 /* Name for each logging module */
 static const char* module_names[VLM_N_MODULES] = {
@@ -175,7 +175,7 @@ int vlog_set_log_file(const char* file_name) {
 
     /* Close old log file. */
     if(log_file) {
-        VLOG_INFO(LOG_MODULE, "closing log file");
+        VLOG_INFO("closing log file");
         fclose(log_file);
         log_file = NULL;
     }
@@ -196,11 +196,10 @@ int vlog_set_log_file(const char* file_name) {
 
     /* Log success or failure. */
     if(!log_file) {
-        VLOG_WARN(LOG_MODULE, "failed to open %s for logging: %s",
-        log_file_name, strerror(errno));
+        VLOG_WARN("failed to open %s for logging: %s", log_file_name, strerror(errno));
         error = errno;
     } else {
-        VLOG_INFO(LOG_MODULE, "opened log file %s", log_file_name);
+        VLOG_INFO("opened log file %s", log_file_name);
         error = 0;
     }
 
@@ -273,7 +272,7 @@ va_list args) {
         size_t off = 0;
         const char* module_name = vlog_get_module_name(module);
         const char* level_name = vlog_get_level_name(level);
-        int syslog_level = syslog_levels[level];
+        // int syslog_level = syslog_levels[level];
         int fd;
         int file_size;
 

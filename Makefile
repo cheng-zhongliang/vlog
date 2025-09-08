@@ -23,7 +23,8 @@ WRAP_FUNCS = \
     vfprintf \
     fputc \
     fprintf \
-    strftime
+    strftime \
+    fputs 
 
 WRAPFLAGS = $(foreach func,$(WRAP_FUNCS),-Wl,--wrap=$(func))
 
