@@ -143,7 +143,7 @@ void test_vlog_log(int level, const char* module, const char* file, int line, co
     expected_file_log_buffer[len] = '\n';
     expected_file_log_buffer[len + 1] = '\0';
 
-    vlog_log(level, module, file, line, fmt);
+    vlog(LOG_MODULE, level, file, line, fmt, ap);
 }
 
 static int setup(void** state) {
@@ -154,7 +154,9 @@ static int setup(void** state) {
     memset(expected_stderr_log_buffer, 0, sizeof(expected_stderr_log_buffer));
     memset(expected_file_log_buffer, 0, sizeof(expected_file_log_buffer));
 
-    vlog_init("test.log", VLOG_TRACE, 1024 * 1024);
+    vlog_init();
+
+    vlog_set_log_file("test.log");
 
     return 0;
 }
@@ -167,7 +169,7 @@ static int teardown(void** state) {
     memset(expected_stderr_log_buffer, 0, sizeof(expected_stderr_log_buffer));
     memset(expected_file_log_buffer, 0, sizeof(expected_file_log_buffer));
 
-    vlog_deinit();
+    vlog_exit();
 
     return 0;
 }
@@ -175,22 +177,24 @@ static int teardown(void** state) {
 static void test_vlog_init(void** state) {
     int rc;
 
-    rc = vlog_init("/tmp/vlog.log", VLOG_TRACE, 1024);
+    vlog_init();
+
+    rc = vlog_set_log_file("test.log");
     assert_int_equal(rc, 0);
 
-    vlog_deinit();
+    vlog_exit();
 }
 
 static void test_vlog_set_level(void** state) {
     will_return_maybe(__wrap_ftell, 100);
 
-    vlog_set_level(VLOG_INFO);
+    vlog_set_levels(VLM_ANY_MODULE, VLF_ANY_FACILITY, VLL_INFO);
 
-    test_vlog_log(VLOG_DEBUG, "main", "test.c", 10, "A debug message");
+    test_vlog_log(VLL_DBG, "main", "test.c", 10, "A debug message");
     assert_string_equal(file_log_buffer, "");
     assert_string_equal(stderr_log_buffer, "");
 
-    test_vlog_log(VLOG_INFO, "main", "test.c", 20, "An info message");
+    test_vlog_log(VLL_INFO, "main", "test.c", 20, "An info message");
     assert_string_equal(file_stash_buffer, expected_file_log_buffer);
     assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
 }

@@ -236,6 +236,12 @@ void vlog_init(void) {
 /* Closes the logging subsystem. */
 void vlog_exit(void) {
     // closelog();
+    if(log_file) {
+        fclose(log_file);
+        log_file = NULL;
+    }
+    free(log_file_name);
+    log_file_name = NULL;
 }
 
 /* Returns true if a log message emitted for the given 'module' and 'level'
@@ -263,7 +269,7 @@ va_list args) {
     if(log_to_console || log_to_syslog || log_to_file) {
         int save_errno = errno;
         struct tm* time = localtime(&now);
-        char buf[VLOG_MSG_MAX_LEN];
+        char buf[VLOG_MSG_MAX_LEN] = { 0 };
         size_t off = 0;
         const char* module_name = vlog_get_module_name(module);
         const char* level_name = vlog_get_level_name(level);
