@@ -2,12 +2,15 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 
 #include <cmocka.h>
 
 #include "vlog.h"
+
+#define LOG_MODULE VLM_test_vlog
 
 FILE* MOCK_FP = (FILE*)1;
 

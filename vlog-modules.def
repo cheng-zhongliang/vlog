@@ -1,0 +1,2 @@
+VLOG_MODULE(vlog)
+VLOG_MODULE(test_vlog)
