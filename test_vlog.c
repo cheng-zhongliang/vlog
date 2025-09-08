@@ -10,7 +10,8 @@
 
 #include "vlog.h"
 
-#define LOG_MODULE VLM_test_vlog
+#define MODULE1 VLM_test_vlog1
+#define MODULE2 VLM_test_vlog2
 
 FILE* MOCK_FP = (FILE*)1;
 
@@ -118,18 +119,21 @@ size_t __wrap_strftime(char* s, size_t maxsize, const char* format, const struct
 }
 
 int __wrap_fputs(const char* __restrict __s, FILE* __restrict __stream) {
-    // if(__stream == MOCK_FP) {
-
-    // }
+    if(__stream == MOCK_FP) {
+        strncpy(file_log_buffer, __s, sizeof(file_log_buffer));
+    } else if(__stream == stderr) {
+        strncpy(stderr_log_buffer, __s, sizeof(stderr_log_buffer));
+    }
     return 0;
 }
 
-void test_vlog_log(int level, const char* module, const char* file, int line, const char* fmt, ...) {
+void test_vlog_log(int level, int module, const char* file, int line, const char* fmt, ...) {
     int len;
     va_list ap;
 
     snprintf(expected_stderr_log_buffer, sizeof(expected_stderr_log_buffer),
-    "12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level), module, file, line);
+    "12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level),
+    vlog_get_module_name(module), file, line);
     len = strlen(expected_stderr_log_buffer);
     va_start(ap, fmt);
     vsnprintf(expected_stderr_log_buffer + len,
@@ -140,8 +144,8 @@ void test_vlog_log(int level, const char* module, const char* file, int line, co
     expected_stderr_log_buffer[len + 1] = '\0';
 
     snprintf(expected_file_log_buffer, sizeof(expected_file_log_buffer),
-    "2024-01-01 12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level), module,
-    file, line);
+    "2024-01-01 12:00:00 %-5s %-5s %s:%d: ", vlog_get_level_name(level),
+    vlog_get_module_name(module), file, line);
     len = strlen(expected_file_log_buffer);
     va_start(ap, fmt);
     vsnprintf(expected_file_log_buffer + len,
@@ -151,10 +155,12 @@ void test_vlog_log(int level, const char* module, const char* file, int line, co
     expected_file_log_buffer[len] = '\n';
     expected_file_log_buffer[len + 1] = '\0';
 
-    vlog(LOG_MODULE, level, file, line, fmt, ap);
+    vlog(module, level, file, line, fmt, ap);
 }
 
 static int setup(void** state) {
+    will_return_maybe(__wrap_ftell, 100);
+
     memset(file_log_buffer, 0, sizeof(file_log_buffer));
     memset(stderr_log_buffer, 0, sizeof(stderr_log_buffer));
     memset(file_stash_buffer, 0, sizeof(file_stash_buffer));
@@ -200,11 +206,11 @@ static void test_vlog_set_level(void** state) {
 
     vlog_set_levels(VLM_ANY_MODULE, VLF_ANY_FACILITY, VLL_INFO);
 
-    test_vlog_log(VLL_DBG, "main", "test.c", 10, "A debug message");
+    test_vlog_log(VLL_DBG, MODULE1, "test.c", 10, "A debug message");
     assert_string_equal(file_log_buffer, "");
     assert_string_equal(stderr_log_buffer, "");
 
-    test_vlog_log(VLL_INFO, "main", "test.c", 20, "An info message");
+    test_vlog_log(VLL_INFO, MODULE2, "test.c", 20, "An info message");
     assert_string_equal(file_stash_buffer, expected_file_log_buffer);
     assert_string_equal(stderr_stash_buffer, expected_stderr_log_buffer);
 }
@@ -213,7 +219,7 @@ static void test_vlog_set_level(void** state) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_vlog_init),
-        // cmocka_unit_test_setup_teardown(test_vlog_set_level, setup, teardown),
+        cmocka_unit_test_setup_teardown(test_vlog_set_level, setup, teardown),
     };
 
     // cmocka_set_message_output(CM_OUTPUT_XML);

@@ -1,2 +1,5 @@
 VLOG_MODULE(vlog)
-VLOG_MODULE(test_vlog)
+VLOG_MODULE(test_vlog1)
+VLOG_MODULE(test_vlog2)
+
+#undef VLOG_MODULE
