@@ -95,7 +95,6 @@ int vlog_set_log_file(const char* file_name, int max_size);
  * character.  Longer messages will be truncated. */
 #define VLOG_MSG_MAX_LEN 2048
 
-
 /* Function for actual logging. */
 void vlog_init(void);
 void vlog_exit(void);
