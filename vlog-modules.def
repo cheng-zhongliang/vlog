@@ -1,4 +1,6 @@
 VLOG_MODULE(vlog)
+
+/* Just a couple of test modules. */
 VLOG_MODULE(test_vlog1)
 VLOG_MODULE(test_vlog2)
 

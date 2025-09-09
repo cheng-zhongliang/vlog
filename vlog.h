@@ -89,16 +89,12 @@ bool vlog_is_enabled(enum vlog_module, enum vlog_level);
 
 /* Configuring log facilities. */
 const char* vlog_get_log_file(void);
-int vlog_set_log_file(const char* file_name);
-int vlog_reopen_log_file(void);
+int vlog_set_log_file(const char* file_name, int max_size);
 
 /* Maximum length of a single log message, including the terminating null
  * character.  Longer messages will be truncated. */
 #define VLOG_MSG_MAX_LEN 2048
 
-/* Maximum size of a log file.  A log file that grows larger than this will be
- * truncated. */
-#define VLOG_FILE_MAX_SIZE 1024 * 2
 
 /* Function for actual logging. */
 void vlog_init(void);
@@ -116,31 +112,36 @@ const char*,
 /* Convenience macros.
  * Guaranteed to preserve errno.
  */
-#define VLOG_EMER(...) VLOG(MODULE, VLL_EMER, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_ERR(...) VLOG(MODULE, VLL_ERR, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_WARN(...) VLOG(MODULE, VLL_WARN, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_INFO(...) VLOG(MODULE, VLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_DBG(...) VLOG(MODULE, VLL_DBG, __FILE__, __LINE__, __VA_ARGS__)
+#define VLOG_EMER(MODULE, ...) \
+    VLOG(MODULE, VLL_EMER, __FILE__, __LINE__, __VA_ARGS__)
+#define VLOG_ERR(MODULE, ...) \
+    VLOG(MODULE, VLL_ERR, __FILE__, __LINE__, __VA_ARGS__)
+#define VLOG_WARN(MODULE, ...) \
+    VLOG(MODULE, VLL_WARN, __FILE__, __LINE__, __VA_ARGS__)
+#define VLOG_INFO(MODULE, ...) \
+    VLOG(MODULE, VLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define VLOG_DBG(MODULE, ...) \
+    VLOG(MODULE, VLL_DBG, __FILE__, __LINE__, __VA_ARGS__)
 
 /* More convenience macros, for testing whether a given level is enabled in
  * MODULE.  When constructing a log message is expensive, this enables it
  * to be skipped. */
-#define VLOG_IS_EMER_ENABLED() true
-#define VLOG_IS_ERR_ENABLED() vlog_is_enabled(MODULE, VLL_EMER)
-#define VLOG_IS_WARN_ENABLED() vlog_is_enabled(MODULE, VLL_WARN)
-#define VLOG_IS_INFO_ENABLED() vlog_is_enabled(MODULE, VLL_INFO)
-#define VLOG_IS_DBG_ENABLED() vlog_is_enabled(MODULE, VLL_DBG)
+#define VLOG_IS_EMER_ENABLED(MODULE) true
+#define VLOG_IS_ERR_ENABLED(MODULE) vlog_is_enabled(MODULE, VLL_EMER)
+#define VLOG_IS_WARN_ENABLED(MODULE) vlog_is_enabled(MODULE, VLL_WARN)
+#define VLOG_IS_INFO_ENABLED(MODULE) vlog_is_enabled(MODULE, VLL_INFO)
+#define VLOG_IS_DBG_ENABLED(MODULE) vlog_is_enabled(MODULE, VLL_DBG)
 
 /* Convenience macros.
  * Guaranteed to preserve errno.
  */
-#define VLOG_ERR_RL(RL, ...) \
+#define VLOG_ERR_RL(MODULE, RL, ...) \
     VLOG_RL(MODULE, RL, VLL_ERR, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_WARN_RL(RL, ...) \
+#define VLOG_WARN_RL(MODULE, RL, ...) \
     VLOG_RL(MODULE, RL, VLL_WARN, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_INFO_RL(RL, ...) \
+#define VLOG_INFO_RL(MODULE, RL, ...) \
     VLOG_RL(MODULE, RL, VLL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define VLOG_DBG_RL(RL, ...) \
+#define VLOG_DBG_RL(MODULE, RL, ...) \
     VLOG_RL(MODULE, RL, VLL_DBG, __FILE__, __LINE__, __VA_ARGS__)
 
 /* Implementation details. */

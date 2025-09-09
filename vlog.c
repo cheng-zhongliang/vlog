@@ -8,7 +8,7 @@
 
 #include "vlog.h"
 
-#define MODULE VLM_vlog
+#define LOG_MODULE VLM_vlog
 
 /* Name for each logging level. */
 static const char* level_names[VLL_N_LEVELS] = {
@@ -51,6 +51,7 @@ enum vlog_level min_vlog_levels[VLM_N_MODULES];
 /* VLF_FILE configuration. */
 static char* log_file_name;
 static FILE* log_file;
+static int log_file_max_size;
 
 /* Searches the 'n_names' in 'names'.  Returns the index of a match for
  * 'target', or 'n_names' if no name matches. */
@@ -168,14 +169,14 @@ const char* vlog_get_log_file(void) {
 /* Sets the name of the log file used by VLF_FILE to 'file_name', or to the
  * default file name if 'file_name' is null.  Returns 0 if successful,
  * otherwise a positive errno value. */
-int vlog_set_log_file(const char* file_name) {
+int vlog_set_log_file(const char* file_name, int max_size) {
     char* old_log_file_name;
     enum vlog_module module;
     int error;
 
     /* Close old log file. */
     if(log_file) {
-        VLOG_INFO("closing log file");
+        VLOG_INFO(LOG_MODULE, "closing log file");
         fclose(log_file);
         log_file = NULL;
     }
@@ -196,21 +197,16 @@ int vlog_set_log_file(const char* file_name) {
 
     /* Log success or failure. */
     if(!log_file) {
-        VLOG_WARN("failed to open %s for logging: %s", log_file_name, strerror(errno));
+        VLOG_WARN(LOG_MODULE, "failed to open %s for logging: %s",
+        log_file_name, strerror(errno));
         error = errno;
     } else {
-        VLOG_INFO("opened log file %s", log_file_name);
+        VLOG_INFO(LOG_MODULE, "opened log file %s", log_file_name);
+        log_file_max_size = max_size;
         error = 0;
     }
 
     return error;
-}
-
-/* Closes and then attempts to re-open the current log file.  (This is useful
- * just after log rotation, to ensure that the new log file starts being used.)
- * Returns 0 if successful, otherwise a positive errno value. */
-int vlog_reopen_log_file(void) {
-    return vlog_set_log_file(log_file_name);
 }
 
 /* Initializes the logging subsystem. */
@@ -294,12 +290,14 @@ va_list args) {
             // syslog(syslog_levels[level], "%s", buf);
         }
         if(log_to_file) {
-            fseek(log_file, 0L, SEEK_END);
-            file_size = ftell(log_file);
-            if(file_size > VLOG_FILE_MAX_SIZE) {
-                fd = fileno(log_file);
-                ftruncate(fd, 0);
-                rewind(log_file);
+            if(log_file_max_size > 0) {
+                fseek(log_file, 0L, SEEK_END);
+                file_size = ftell(log_file);
+                if(file_size > log_file_max_size) {
+                    fd = fileno(log_file);
+                    ftruncate(fd, 0);
+                    rewind(log_file);
+                }
             }
 
             fputs(buf, log_file);
