@@ -8,14 +8,14 @@
 #include "util.h"
 
 /* Logging importance levels. */
-#define VLOG_LEVELS               \
-    VLOG_LEVEL(EMER, LOG_ALERT)   \
-    VLOG_LEVEL(ERR, LOG_ERR)      \
-    VLOG_LEVEL(WARN, LOG_WARNING) \
-    VLOG_LEVEL(INFO, LOG_INFO)    \
-    VLOG_LEVEL(DBG, LOG_DEBUG)
+#define VLOG_LEVELS  \
+    VLOG_LEVEL(EMER) \
+    VLOG_LEVEL(ERR)  \
+    VLOG_LEVEL(WARN) \
+    VLOG_LEVEL(INFO) \
+    VLOG_LEVEL(DBG)
 enum vlog_level {
-#define VLOG_LEVEL(NAME, SYSLOG_LEVEL) VLL_##NAME,
+#define VLOG_LEVEL(NAME) VLL_##NAME,
     VLOG_LEVELS
 #undef VLOG_LEVEL
     VLL_N_LEVELS
@@ -26,7 +26,6 @@ enum vlog_level vlog_get_level_val(const char* name);
 
 /* Facilities that we can log to. */
 #define VLOG_FACILITIES    \
-    VLOG_FACILITY(SYSLOG)  \
     VLOG_FACILITY(CONSOLE) \
     VLOG_FACILITY(FILE)
 enum vlog_facility {

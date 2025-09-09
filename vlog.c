@@ -12,17 +12,10 @@
 
 /* Name for each logging level. */
 static const char* level_names[VLL_N_LEVELS] = {
-#define VLOG_LEVEL(NAME, SYSLOG_LEVEL) #NAME,
+#define VLOG_LEVEL(NAME) #NAME,
     VLOG_LEVELS
 #undef VLOG_LEVEL
 };
-
-/* Syslog value for each logging level. */
-// static int syslog_levels[VLL_N_LEVELS] = {
-// #define VLOG_LEVEL(NAME, SYSLOG_LEVEL) SYSLOG_LEVEL,
-//     VLOG_LEVELS
-// #undef VLOG_LEVEL
-// };
 
 /* Name for each logging module */
 static const char* module_names[VLM_N_MODULES] = {
@@ -211,21 +204,7 @@ int vlog_set_log_file(const char* file_name, int max_size) {
 
 /* Initializes the logging subsystem. */
 void vlog_init(void) {
-    // time_t now;
-
-    // openlog(program_name, LOG_NDELAY, LOG_DAEMON);
     vlog_set_levels(VLM_ANY_MODULE, VLF_ANY_FACILITY, VLL_INFO);
-
-    // boot_time = time_msec();
-    // now = time_now();
-    // if (now < 0) {
-    //     struct tm tm;
-    //     char s[128];
-
-    //     localtime_r(&now, &tm);
-    //     strftime(s, sizeof s, "%a, %d %b %Y %H:%M:%S %z", &tm);
-    //     VLOG_ERR(LOG_MODULE, "current time is negative: %s (%ld)", s, (long int) now);
-    // }
 }
 
 /* Closes the logging subsystem. */
@@ -258,21 +237,21 @@ time_t now,
 const char* message,
 va_list args) {
     bool log_to_console = levels[module][VLF_CONSOLE] >= level;
-    bool log_to_syslog = levels[module][VLF_SYSLOG] >= level;
     bool log_to_file = levels[module][VLF_FILE] >= level && log_file;
 
-    if(log_to_console || log_to_syslog || log_to_file) {
+    if(log_to_console || log_to_file) {
         int save_errno = errno;
-        struct tm* time = localtime(&now);
+        struct tm time;
         char buf[VLOG_MSG_MAX_LEN] = { 0 };
         size_t off = 0;
         const char* module_name = vlog_get_module_name(module);
         const char* level_name = vlog_get_level_name(level);
-        // int syslog_level = syslog_levels[level];
         int fd;
         int file_size;
 
-        off = strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", time);
+        localtime_r(&now, &time);
+
+        off = strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &time);
         off += snprintf(buf + off, sizeof(buf) - off,
         " %-5s %-5s %s:%d: ", level_name, module_name, file, line);
         off += vsnprintf(buf + off, sizeof(buf) - off, message, args);
@@ -285,9 +264,6 @@ va_list args) {
         if(log_to_console) {
             fputs(buf, stderr);
             fflush(stderr);
-        }
-        if(log_to_syslog) {
-            // syslog(syslog_levels[level], "%s", buf);
         }
         if(log_to_file) {
             if(log_file_max_size > 0) {
