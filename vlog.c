@@ -209,7 +209,6 @@ void vlog_init(void) {
 
 /* Closes the logging subsystem. */
 void vlog_exit(void) {
-    // closelog();
     if(log_file) {
         fclose(log_file);
         log_file = NULL;
