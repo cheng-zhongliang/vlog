@@ -64,55 +64,6 @@ int __wrap_fflush(FILE* stream) {
     return 0;
 }
 
-int __wrap_vfprintf(FILE* stream, const char* format, va_list ap) {
-    int rc;
-    int len;
-
-    if(stream == MOCK_FP) {
-        len = strlen(file_log_buffer);
-        rc = vsnprintf(file_log_buffer + len, sizeof(file_log_buffer) - len, format, ap);
-    } else if(stream == stderr) {
-        len = strlen(stderr_log_buffer);
-        rc = vsnprintf(stderr_log_buffer + len, sizeof(stderr_log_buffer) - len, format, ap);
-    }
-
-    return rc;
-}
-
-int __wrap_fprintf(FILE* stream, const char* format, ...) {
-    int rc;
-    va_list ap;
-    int len;
-
-    va_start(ap, format);
-    if(stream == MOCK_FP) {
-        len = strlen(file_log_buffer);
-        rc = vsnprintf(file_log_buffer + len, sizeof(file_log_buffer) - len, format, ap);
-    } else if(stream == stderr) {
-        len = strlen(stderr_log_buffer);
-        rc = vsnprintf(stderr_log_buffer + len, sizeof(stderr_log_buffer) - len, format, ap);
-    }
-    va_end(ap);
-
-    return rc;
-}
-
-int __wrap_fputc(int c, FILE* stream) {
-    int len;
-
-    if(stream == MOCK_FP) {
-        len = strlen(file_log_buffer);
-        file_log_buffer[len] = (char)c;
-        file_log_buffer[len + 1] = '\0';
-    } else if(stream == stderr) {
-        len = strlen(stderr_log_buffer);
-        stderr_log_buffer[len] = (char)c;
-        stderr_log_buffer[len + 1] = '\0';
-    }
-
-    return 0;
-}
-
 size_t __wrap_strftime(char* s, size_t maxsize, const char* format, const struct tm* tm) {
     if(strcmp(format, "%Y-%m-%d %H:%M:%S") == 0) {
         return snprintf(s, maxsize, "2024-01-01 12:00:00");

@@ -20,9 +20,6 @@ WRAP_FUNCS = \
     fileno \
     ftruncate \
     fflush \
-    vfprintf \
-    fputc \
-    fprintf \
     strftime \
     fputs 
 
