@@ -161,7 +161,9 @@ const char* vlog_get_log_file(void) {
 
 /* Sets the name of the log file used by VLF_FILE to 'file_name', or to the
  * default file name if 'file_name' is null.  Returns 0 if successful,
- * otherwise a positive errno value. */
+ * otherwise a positive errno value. The maximum size of the log file is set to
+ * 'max_size' bytes; if 'max_size' is 0, the log file is allowed to grow
+ * without limit.  (A non-positive 'max_size' is treated as 0.) */
 int vlog_set_log_file(const char* file_name, int max_size) {
     char* old_log_file_name;
     enum vlog_module module;
@@ -194,7 +196,7 @@ int vlog_set_log_file(const char* file_name, int max_size) {
         log_file_name, strerror(errno));
         error = errno;
     } else {
-        VLOG_INFO(LOG_MODULE, "opened log file %s", log_file_name);
+        VLOG_INFO(LOG_MODULE, "opened log file %s with max size %d", log_file_name, max_size);
         log_file_max_size = max_size;
         error = 0;
     }
