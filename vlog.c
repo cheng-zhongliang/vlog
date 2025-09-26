@@ -231,8 +231,10 @@ void vlog_exit(void) {
         fclose(log_file);
         log_file = NULL;
     }
-    free(log_file_name);
-    log_file_name = NULL;
+    if(log_file_name) {
+        free(log_file_name);
+        log_file_name = NULL;
+    }
 }
 
 /* Returns true if a log message emitted for the given 'module' and 'level'
