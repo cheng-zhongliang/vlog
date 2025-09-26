@@ -5,7 +5,15 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "util.h"
+#ifndef MIN
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#endif
+
+#ifndef MAX
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#endif
+
+#define ARRAY_SIZE(ARRAY) (sizeof ARRAY / sizeof *ARRAY)
 
 /* Logging importance levels. */
 #define VLOG_LEVELS  \
